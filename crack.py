@@ -1,23 +1,44 @@
-from random import shuffle
+from random import shuffle, randint
+from math import log10
+import json
+
+alphabet = list("abcdefghijklmnopqrstuvwxyz")
 
 def generateKey():
     key = {}
-    alphabet = list("abcdefghijklmnopqrstuvwxyz")
     newAlphabet = alphabet[:] #create a new copy of the alphabet
     shuffle(newAlphabet) #shuffle the new copy
     for x in range(0, len(alphabet)):
         key[alphabet[x]] = newAlphabet[x] 
-    print(key)
     return key
 
+def shiftCaesar(message, shift):
+    ## Takes a message and shifts it as if it was put through a Caesar cipher
+    ## Use a positive shift for encryption, negative shift for decryption
+    newMsg = ""
+    message = message.lower()
+    for x in message:
+        if not x.isalpha():
+            newMsg += x
+            continue
+        index = alphabet.index(x)
+        newMsg += alphabet[(index + shift) % 26]
+    return newMsg
+
+def printSorted(freqMap):
+    print(sorted(freqMap.items(), key=lambda x: x[1], reverse=True))
 
 class Key():
 
     def __init__(self, forwardKey):
-        self.forwardKey = forwardKey
+        self.forwardKey = forwardKey #Take the key as constructor args
+        self.__flipkey()
+        self.alphabet = list("abcdefghijklmnopqrstuvwxyz")
+
+    def __flipkey(self):
         backwardKey = {}
-        for k, v in forwardKey.items():
-            backwardKey[v] = k
+        for k, v in self.forwardKey.items(): #Create a hashmap with the values and keys swapped
+            backwardKey[v] = k       
         self.backwardKey = backwardKey
 
     def __translate(self, message, key):
@@ -36,84 +57,132 @@ class Key():
     def decrypt(self, message):
         return self.__translate(message, self.backwardKey)
 
-key = Key(generateKey())
-message = key.encrypt("Test message.")
-print(message)
-print(key.decrypt(message))
+    def mutate(self):
+        newKey = self.forwardKey
+        num1 = randint(0, 25)
+        num2 = randint(0, 25)
+        temp = ""
+        temp = newKey[self.alphabet[num1]]
+        newKey[self.alphabet[num1]] = newKey[self.alphabet[num2]]
+        newKey[self.alphabet[num2]] = temp
+        return Key(newKey)
 
-letterFreq = "etaoinshrdlcumwfgypbvkjxqz"
-doubleFreq = "lseotfprmcndgibazxuh"
-pairFreq = ["th", "er", "on", "an", "re", "he", "in", "ed", "nd", "ha", "at", "en", "es", "of", "or"]
+    def __str__(self):
+        return str(self.forwardKey)
 
-def letterFreqAnalysis(phrase):
-    freqMap = {}
-    for x in phrase:
-        if not x.isalpha():
-            continue
-        if x in freqMap:
-            freqMap[x] = freqMap[x] + 1
-        else:
-            freqMap[x] = 1
-    return freqMap
+class LangScore():
 
-def doubleLetterAnalysis(phrase):
-    freqMap = {}
-    for i in range(0, len(phrase) - 1):
-        if phrase[i] == phrase[i + 1]:
-            x = phrase[i]
-            if x in freqMap:
-                freqMap[x] = freqMap[x] + 1
+    def __init__(self, filepath):
+        data = open(filepath)
+        quadFreq = json.load(data)
+        data.close()
+        self.N = sum(quadFreq.values())
+        self.quadData = {}
+        for k, v in quadFreq.items():
+            self.quadData[k] = log10(float(v) / float(self.N))
+        self.floor = log10(0.01/self.N)
+        print("Scorer initialized")
+
+    def scoreText(self, text):
+        score = 0
+        for x in range(0, len(text) - 4):
+            if text[x:x+4].upper() in self.quadData:
+                score += self.quadData[text[x:x+4].upper()]
             else:
-                freqMap[x] = 1
-    return freqMap
-
-def pairAnalysis(phrase):
-    freqMap = {}
-    for i in range(0, len(phrase) - 1):
-        x = phrase[i] + phrase[i + 1]
-        if x in freqMap:
-            freqMap[x] = freqMap[x] + 1
-        else:
-            freqMap[x] = 1
-    return freqMap
-
-def printSorted(freqMap):
-    print(sorted(freqMap.items(), key=lambda x: x[1], reverse=True))
+                score += self.floor
+        return score
 
 
-# file = open("./message.txt")
-
-# msg = file.read()
-
-# for x in msg:
-#     if not x.isalpha():
-#         msg = msg.replace(x, "")
+# msg = "The fitnessgram pacer test is a multinational aerobic capacity test"
 
 # print(msg)
+# print(shiftCaesar(msg, 7))
 
-# freq = letterFreqAnalysis(msg)
-# freqDouble = doubleLetterAnalysis(msg)
-# freqPair = pairAnalysis(msg)
 
-# printSorted(freq)
-# printSorted(freqDouble)
-# printSorted(freqPair)
+# exit()
 
-# freqSorted = sorted(freq.items(), key=lambda x: x[1], reverse=True)
+#Read the message to be decrypted
+file = open("./message.txt")
+msg = file.read()
+for x in msg:
+    if not x.isalpha():
+        msg = msg.replace(x, "")
 
-# print(freqSorted)
+#Load the english NGRAMS for scoring
+# scorer = LangScore("quadcount.txt")
+scorer = LangScore("quadcountCOPIED.txt")
 
-# keyFreq = {}
+bestScore = scorer.scoreText(msg)
+bestMsg = msg
+bestShift = 0
 
-# count = 0
-# for k, v in freqSorted:
-#     keyFreq[k] = letterFreq[count]
-#     count = count + 1
+#Test the 25 possible Caesar shift combinations and find the closest result to english
+for x in range(1, 25):
+    newMsg = shiftCaesar(msg, -x)
+    newScore = scorer.scoreText(newMsg)
+    if newScore > bestScore:
+        bestScore = newScore
+        bestMsg = newMsg
+        bestShift = x
 
-# print(keyFreq)
-# print(msg)
-# newPhrase = ""
-# for x in msg:
-#     newPhrase += keyFreq[x]
+#Print the closest result to english
+print("Key:", "Caesar Cipher, Shift: ", bestShift)
+print("Decrypted message: ", bestMsg)
+print("Message score: ", bestScore)
+print("-" * 50)
 
-# print(newPhrase)
+# exit()
+
+# print(scorer.scoreText("Hello my name is josh"))
+
+
+# exit()
+
+
+# bestScore = -1
+# score = -1
+# key = Key(generateKey())
+
+# while True:
+#     prevScore = score
+#     for x in range(0, 1000):
+#         newKey = key.mutate()
+#         result = key.decrypt(msg)
+#         newScore = scorer.scoreText(result)
+#         if newScore > score:
+#             score = newScore
+#             key = newKey
+#             break
+#     if score > bestScore:
+#         bestScore = score
+#         print(key)
+#         print(result)
+#         print(newScore)
+
+topKey = {}
+key = Key(generateKey())
+score = bestScore
+
+while True:
+
+    improved = False
+    for x in range(1000):
+        newKey = key.mutate()
+        result = key.decrypt(msg)
+        newScore = scorer.scoreText(result)
+        if newScore > score:
+            score = newScore
+            key = newKey
+            improved = True
+            break
+    if not improved:
+        if score > bestScore:
+            bestScore = score
+            topKey = key
+            print("Key: ", key)
+            print("Decrypted Message: ", str(key.decrypt(msg)))
+            print("Message score: ", score)
+            print("-" * 50)
+        key = Key(generateKey())
+        score = float("-inf")
+
