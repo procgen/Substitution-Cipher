@@ -2,7 +2,24 @@ from random import shuffle, randint
 from math import log10
 import json
 
+#Create a list to help remember the alphabet
 alphabet = list("abcdefghijklmnopqrstuvwxyz")
+
+#Read the message to be decrypted
+file = open("./message.txt")
+msg = file.read()
+for x in msg:
+    if not x.isalpha():
+        msg = msg.replace(x, "")
+file.close()
+
+#Initialize a list with a ton of english words
+file = open("./english_words.txt")
+wordList = []
+for line in file:
+    wordList.append(line.rstrip())
+file.close()
+
 
 def generateKey():
     key = {}
@@ -24,6 +41,28 @@ def shiftCaesar(message, shift):
         index = alphabet.index(x)
         newMsg += alphabet[(index + shift) % 26]
     return newMsg
+
+# def splitWords(message):
+#     newMsg = ""
+#     while message != "":
+#         for x in range(0, len(message)):
+#             if message[0:x] in wordList:
+#                 newMsg += message[0:x] + " "
+#                 message = message[x:]
+#                 break
+#             if x == len(message) - 1:
+#                 newMsg += message
+#                 message = ""
+#                 break
+#     return newMsg
+
+def splitWords(message):
+    for x in range(len(message), 0, -1):
+        if message[0:x] in wordList:
+            result = message[0:x] + " " + splitWords(message[x:])
+            if set(result.split(" ")).issubset(wordList):
+                return result
+    return message
 
 def printSorted(freqMap):
     print(sorted(freqMap.items(), key=lambda x: x[1], reverse=True))
@@ -92,22 +131,6 @@ class LangScore():
                 score += self.floor
         return score
 
-
-# msg = "The fitnessgram pacer test is a multinational aerobic capacity test"
-
-# print(msg)
-# print(shiftCaesar(msg, 7))
-
-
-# exit()
-
-#Read the message to be decrypted
-file = open("./message.txt")
-msg = file.read()
-for x in msg:
-    if not x.isalpha():
-        msg = msg.replace(x, "")
-
 #Load the english NGRAMS for scoring
 # scorer = LangScore("quadcount.txt")
 scorer = LangScore("quadcountCOPIED.txt")
@@ -126,9 +149,9 @@ for x in range(1, 25):
         bestShift = x
 
 #Print the closest result to english
-print("Key:", "Caesar Cipher, Shift: ", bestShift)
-print("Decrypted message: ", bestMsg)
-print("Message score: ", bestScore)
+print("Key: Caesar Cipher, Shift: %s" % bestShift)
+print("Decrypted message: %s" % splitWords(bestMsg))
+print("Message score: %.3f" % bestScore)
 print("-" * 50)
 
 # exit()
@@ -179,9 +202,9 @@ while True:
         if score > bestScore:
             bestScore = score
             topKey = key
-            print("Key: ", key)
-            print("Decrypted Message: ", str(key.decrypt(msg)))
-            print("Message score: ", score)
+            print("Key: %s" % key)
+            print("Decrypted Message: %s" % splitWords(key.decrypt(msg)))
+            print("Message score: %.3f" % score)
             print("-" * 50)
         key = Key(generateKey())
         score = float("-inf")
