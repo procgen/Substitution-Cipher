@@ -26,7 +26,7 @@ def generateKey():
     newAlphabet = alphabet[:] #create a new copy of the alphabet
     shuffle(newAlphabet) #shuffle the new copy
     for x in range(0, len(alphabet)):
-        key[alphabet[x]] = newAlphabet[x] 
+        key[alphabet[x]] = newAlphabet[x]  #map old alphabet as keys and shuffled one as values
     return key
 
 def shiftCaesar(message, shift):
@@ -35,36 +35,22 @@ def shiftCaesar(message, shift):
     newMsg = ""
     message = message.lower()
     for x in message:
-        if not x.isalpha():
+        if not x.isalpha(): #Skip non alphabetic characters
             newMsg += x
             continue
-        index = alphabet.index(x)
-        newMsg += alphabet[(index + shift) % 26]
+        index = alphabet.index(x) #Find what 'number' represents this letter
+        newMsg += alphabet[(index + shift) % 26] #Replace the letter with a shifted one
     return newMsg
 
-# def splitWords(message):
-#     newMsg = ""
-#     while message != "":
-#         for x in range(0, len(message)):
-#             if message[0:x] in wordList:
-#                 newMsg += message[0:x] + " "
-#                 message = message[x:]
-#                 break
-#             if x == len(message) - 1:
-#                 newMsg += message
-#                 message = ""
-#                 break
-#     return newMsg
-
-def splitWords(message):
-    for x in range(len(message), 0, -1):
-        if message[0:x] in wordList:
-            result = message[0:x] + " " + splitWords(message[x:])
+def splitWords(message): #Attempts to split up a phrase by english words
+    for x in range(len(message), 0, -1): #Work backwards to find solutions with larger words first
+        if message[0:x] in wordList: #Go through message until a working word is found
+            result = message[0:x] + " " + splitWords(message[x:]) #recursively find results until one works
             if set(result.split(" ")).issubset(wordList):
-                return result
+                return result #Only return split if every other piece of the message is split into a word
     return message
 
-def printSorted(freqMap):
+def printSorted(freqMap): #Sorts the keys of the dict for display to the user
     print(sorted(freqMap.items(), key=lambda x: x[1], reverse=True))
 
 class Key():
@@ -81,10 +67,10 @@ class Key():
         self.backwardKey = backwardKey
 
     def __translate(self, message, key):
-        newMessage = ""
-        message = message.lower()
+        newMessage = "" #run every letter through the appropriate dict mapping
+        message = message.lower() #this converts each letter like a substitution cipher
         for x in message:
-            if x.isalpha():
+            if x.isalpha(): #Skip non alphabetic characters
                 newMessage += key[x]
             else:
                 newMessage += x
@@ -98,13 +84,35 @@ class Key():
 
     def mutate(self):
         newKey = self.forwardKey
-        num1 = randint(0, 25)
+        num1 = randint(0, 25) #Generate two random numbers
         num2 = randint(0, 25)
         temp = ""
-        temp = newKey[self.alphabet[num1]]
+        temp = newKey[self.alphabet[num1]] #Swap the mapping located at those two indices
         newKey[self.alphabet[num1]] = newKey[self.alphabet[num2]]
         newKey[self.alphabet[num2]] = temp
-        return Key(newKey)
+        return Key(newKey) #reutn the resulting mutated key
+
+    def mate(self, partner, scorer, msg):
+        childKey = Key(self.forwardKey)
+        partnerKey = partner.forwardKey
+        for k in childKey.keys():
+            currentScore = scorer.scoreText(childKey.decrypt(msg))
+            if childKey.forwardKey[k] == partnerKey[k]:
+                continue
+            else:
+                newLetter = partnerKey[k]
+                oldMap = childKey.backwardKey[newLetter]
+                tempMap = childKey.forwardKey
+                tempMap[oldMap] = tempMap[k]
+                tempMap[k] = newLetter
+                tempKey = Key(tempMap)
+                newScore = scorer.scoreText(tempKey.decrypt(msg))
+                if newScore >= currentScore: #If we achieved a better score, keep the swap
+                    childKey = tempKey
+
+
+
+
 
     def __str__(self):
         return str(self.forwardKey)
