@@ -1,5 +1,6 @@
 from math import log10
 from key import Key, alphabet
+from random import choices
 import json
 
 #Read the message to be decrypted
@@ -141,7 +142,38 @@ def genetic():
     population = []
     for x in range(30):
         newKey = Key()
-        score = newKey.decrypt(msg)
-        population.append((score, newKey))
+        newKey.calcScore(scorer, msg)
+        population.append(newKey)
 
-hillClimb()
+    while True:
+        population = sorted(population, reverse=True)
+        if population[0].score > bestScore:
+            bestScore = population[0].score
+            topKey = population[0]
+            print("Key: %s" % population[0])
+            print("Decrypted Message: %s" % splitWords(population[0].decrypt(msg)))
+            print("Message score: %.3f" % population[0].score)
+            print("-" * 50)
+
+        mates = choices(population, list(range(len(population), 0, -1)), k=20)
+
+        for x in range(9):
+            newKey = Key()
+            newKey.calcScore(scorer, msg)
+            mates.append(newKey)
+
+        # print("Best one: ")
+        # print(population[0])
+        newPopulation = []
+        for x in mates:
+            child = population[0].mate(x, scorer, msg) 
+            child.calcScore(scorer, msg)           
+            newPopulation.append(child)
+        population = newPopulation
+
+
+
+
+    
+
+genetic()

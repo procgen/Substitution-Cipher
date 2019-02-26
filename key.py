@@ -12,6 +12,22 @@ class Key():
             self.forwardKey = forwardKey #Take the key as constructor args
         self.__flipkey()
         self.alphabet = list("abcdefghijklmnopqrstuvwxyz")
+        self.score = float("-inf")
+
+    def __lt__(self, other):
+        return self.score < other.score
+
+    def __gt__(self, other):
+        return self.score > other.score
+
+    def __eq__(self, other):
+        return self.score == other.score
+
+    def __ge__(self, other):
+        return self > other or self == other
+
+    def __le__(self, other):
+        return self < other or self == other
 
     def __flipkey(self):
         backwardKey = {}
@@ -37,6 +53,8 @@ class Key():
             key[alphabet[x]] = newAlphabet[x]  #map old alphabet as keys and shuffled one as values
         return key
 
+    def calcScore(self, scorer, msg):
+        self.score = scorer.scoreText(self.decrypt(msg))
 
     def encrypt(self, message):
         return self.__translate(message, self.forwardKey)
@@ -87,3 +105,6 @@ class Key():
 
     def __str__(self):
         return str(self.forwardKey)
+
+    def __getitem__(self, key):
+        return self
