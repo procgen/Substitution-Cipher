@@ -80,6 +80,7 @@ scorer = LangScore("quadcountCOPIED.txt")
 # print(childKey)
 # print(scorer.scoreText(childKey.decrypt(msg)))
 
+# print(scorer.scoreText("testingtheabilityofmyprogramtodecryptamessage"))
 
 # exit()
 
@@ -138,38 +139,44 @@ def hillClimb():
 
 def genetic():
     global bestScore
-
-    population = []
-    for x in range(30):
-        newKey = Key()
-        newKey.calcScore(scorer, msg)
-        population.append(newKey)
+    POP_SIZE = 50
 
     while True:
-        population = sorted(population, reverse=True)
-        if population[0].score > bestScore:
-            bestScore = population[0].score
-            topKey = population[0]
-            print("Key: %s" % population[0])
-            print("Decrypted Message: %s" % splitWords(population[0].decrypt(msg)))
-            print("Message score: %.3f" % population[0].score)
-            print("-" * 50)
-
-        mates = choices(population, list(range(len(population), 0, -1)), k=20)
-
-        for x in range(9):
+        population = []
+        for x in range(POP_SIZE):
             newKey = Key()
             newKey.calcScore(scorer, msg)
-            mates.append(newKey)
+            population.append(newKey)
 
-        # print("Best one: ")
-        # print(population[0])
-        newPopulation = []
-        for x in mates:
-            child = population[0].mate(x, scorer, msg) 
-            child.calcScore(scorer, msg)           
-            newPopulation.append(child)
-        population = newPopulation
+        populationCount = 1
+        while populationCount <= 250:
+            population = sorted(population, reverse=True)
+            if population[0].score > bestScore:
+                print("Population #%i" % populationCount)
+                bestScore = population[0].score
+                topKey = population[0]
+                print("Key: %s" % population[0])
+                print("Decrypted Message: %s" % splitWords(population[0].decrypt(msg)))
+                print("Message score: %.3f" % population[0].score)
+                print("-" * 50)
+                populationCount = 0
+
+            weights = list(range(len(population), 0, -1))
+            mates = choices(population, weights, k=POP_SIZE)
+            # for x in range(9):
+            #     newKey = Key()
+            #     newKey.calcScore(scorer, msg)
+            #     mates.append(newKey)
+
+            # print("Best one: ")
+            # print(population[0])
+            newPopulation = []
+            for x in mates:
+                child = population[0].mate(choices(population,weights, k=1)[0], scorer, msg) 
+                child.calcScore(scorer, msg)           
+                newPopulation.append(child)
+            population = newPopulation
+            populationCount += 1
 
 
 

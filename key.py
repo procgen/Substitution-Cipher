@@ -100,6 +100,7 @@ class Key():
 
                 if newScore >= currentScore: #If we achieved a better score, keep the swap
                     childKey = tempKey
+        # childKey.mutate()
         childKey.mutate()
         return childKey
 
