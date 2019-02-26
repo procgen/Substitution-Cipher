@@ -57,18 +57,29 @@ class Key():
     def mate(self, partner, scorer, msg):
         childKey = Key(self.forwardKey)
         partnerKey = partner.forwardKey
-        for k in childKey.keys():
+        keys = childKey.forwardKey.keys()
+        for k in keys:
             currentScore = scorer.scoreText(childKey.decrypt(msg))
             if childKey.forwardKey[k] == partnerKey[k]:
                 continue
             else:
+                # print(k, childKey.forwardKey[k], k, partnerKey[k])
+
                 newLetter = partnerKey[k]
+                #Check out what mate is mapped to
+
                 oldMap = childKey.backwardKey[newLetter]
-                tempMap = childKey.forwardKey
+                #Find out what child key has as the key for that new letter
+
+                tempMap = childKey.forwardKey.copy()
+                #create a temporary key mapping
+
                 tempMap[oldMap] = tempMap[k]
+
                 tempMap[k] = newLetter
                 tempKey = Key(tempMap)
                 newScore = scorer.scoreText(tempKey.decrypt(msg))
+
                 if newScore >= currentScore: #If we achieved a better score, keep the swap
                     childKey = tempKey
         childKey.mutate()

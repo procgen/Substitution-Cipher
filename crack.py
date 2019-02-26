@@ -68,6 +68,20 @@ class LangScore():
 # scorer = LangScore("quadcount.txt")
 scorer = LangScore("quadcountCOPIED.txt")
 
+# testKey1 = Key()
+# testKey2 = Key()
+
+# print(testKey1)
+# print(scorer.scoreText(testKey1.decrypt(msg)))
+# print(testKey2)
+# print(scorer.scoreText(testKey2.decrypt(msg)))
+# childKey = testKey1.mate(testKey2, scorer, msg)
+# print(childKey)
+# print(scorer.scoreText(childKey.decrypt(msg)))
+
+
+# exit()
+
 bestScore = scorer.scoreText(msg)
 bestMsg = msg
 bestShift = 0
