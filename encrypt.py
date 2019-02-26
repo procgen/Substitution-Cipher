@@ -16,7 +16,7 @@ def removeWhitespace(msg):
     return msg
 
 print("Enter message to encrypt: ")
-msg = raw_input()
+msg = input()
 
 msg = removeWhitespace(msg)
 key = Key()
