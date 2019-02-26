@@ -5,11 +5,8 @@ alphabet = list("abcdefghijklmnopqrstuvwxyz")
 
 class Key():
 
-    def __init__(self, forwardKey = None):
-        if forwardKey == None:
-            self.forwardKey = self.__generateKey()
-        else:
-            self.forwardKey = forwardKey #Take the key as constructor args
+    def __init__(self, forwardKey = {}):
+        self.forwardKey = self.__generateKey(forwardKey) #Fill in missing letters in key
         self.__flipkey()
         self.alphabet = list("abcdefghijklmnopqrstuvwxyz")
         self.score = float("-inf")
@@ -45,12 +42,14 @@ class Key():
                 newMessage += x
         return newMessage
 
-    def __generateKey(self):
-        key = {}
-        newAlphabet = alphabet[:] #create a new copy of the alphabet
-        shuffle(newAlphabet) #shuffle the new copy
-        for x in range(0, len(alphabet)):
-            key[alphabet[x]] = newAlphabet[x]  #map old alphabet as keys and shuffled one as values
+    def __generateKey(self, key={}):
+        inputs = list(set(alphabet) - set(key.keys())) #get all unassigned keys 
+
+        values = list(set(alphabet) - set(key.values()))
+        #get all unassigned values
+        shuffle(values) #shuffle the unassigned values
+        for x in range(0, len(inputs)): #for every key, give it an associated value
+            key[inputs[x]] = values[x]  #map key alphabet as keys and shuffled one as values
         return key
 
     def calcScore(self, scorer, msg):
