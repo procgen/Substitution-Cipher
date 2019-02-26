@@ -21,14 +21,6 @@ for line in file:
 file.close()
 
 
-def generateKey():
-    key = {}
-    newAlphabet = alphabet[:] #create a new copy of the alphabet
-    shuffle(newAlphabet) #shuffle the new copy
-    for x in range(0, len(alphabet)):
-        key[alphabet[x]] = newAlphabet[x]  #map old alphabet as keys and shuffled one as values
-    return key
-
 def shiftCaesar(message, shift):
     ## Takes a message and shifts it as if it was put through a Caesar cipher
     ## Use a positive shift for encryption, negative shift for decryption
@@ -55,15 +47,18 @@ def printSorted(freqMap): #Sorts the keys of the dict for display to the user
 
 class Key():
 
-    def __init__(self, forwardKey):
-        self.forwardKey = forwardKey #Take the key as constructor args
+    def __init__(self, forwardKey = None):
+        if forwardKey == None:
+            self.forwardKey = self.__generateKey()
+        else:
+            self.forwardKey = forwardKey #Take the key as constructor args
         self.__flipkey()
         self.alphabet = list("abcdefghijklmnopqrstuvwxyz")
 
     def __flipkey(self):
         backwardKey = {}
         for k, v in self.forwardKey.items(): #Create a hashmap with the values and keys swapped
-            backwardKey[v] = k       
+            backwardKey[v] = k
         self.backwardKey = backwardKey
 
     def __translate(self, message, key):
@@ -75,6 +70,15 @@ class Key():
             else:
                 newMessage += x
         return newMessage
+
+    def __generateKey(self):
+        key = {}
+        newAlphabet = alphabet[:] #create a new copy of the alphabet
+        shuffle(newAlphabet) #shuffle the new copy
+        for x in range(0, len(alphabet)):
+            key[alphabet[x]] = newAlphabet[x]  #map old alphabet as keys and shuffled one as values
+        return key
+
 
     def encrypt(self, message):
         return self.__translate(message, self.forwardKey)
@@ -109,7 +113,8 @@ class Key():
                 newScore = scorer.scoreText(tempKey.decrypt(msg))
                 if newScore >= currentScore: #If we achieved a better score, keep the swap
                     childKey = tempKey
-
+        childKey.mutate()
+        return childKey
 
 
 
@@ -162,58 +167,44 @@ print("Decrypted message: %s" % splitWords(bestMsg))
 print("Message score: %.3f" % bestScore)
 print("-" * 50)
 
-# exit()
-
-# print(scorer.scoreText("Hello my name is josh"))
 
 
-# exit()
+def hillClimb():
+    global bestScore
+
+    topKey = {}
+    # key = Key(generateKey())
+    key = Key()
+    score = bestScore
+
+    while True:
+
+        improved = False
+        for x in range(1000):
+            newKey = key.mutate()
+            result = key.decrypt(msg)
+            newScore = scorer.scoreText(result)
+            if newScore > score:
+                score = newScore
+                key = newKey
+                improved = True
+                break
+        if not improved:
+            if score > bestScore:
+                bestScore = score
+                topKey = key
+                print("Key: %s" % key)
+                print("Decrypted Message: %s" % splitWords(key.decrypt(msg)))
+                print("Message score: %.3f" % score)
+                print("-" * 50)
+            # key = Key(generateKey())
+            key = Key()
+            score = float("-inf")
+
+def genetic():
+
+    global bestScore
 
 
-# bestScore = -1
-# score = -1
-# key = Key(generateKey())
 
-# while True:
-#     prevScore = score
-#     for x in range(0, 1000):
-#         newKey = key.mutate()
-#         result = key.decrypt(msg)
-#         newScore = scorer.scoreText(result)
-#         if newScore > score:
-#             score = newScore
-#             key = newKey
-#             break
-#     if score > bestScore:
-#         bestScore = score
-#         print(key)
-#         print(result)
-#         print(newScore)
-
-topKey = {}
-key = Key(generateKey())
-score = bestScore
-
-while True:
-
-    improved = False
-    for x in range(1000):
-        newKey = key.mutate()
-        result = key.decrypt(msg)
-        newScore = scorer.scoreText(result)
-        if newScore > score:
-            score = newScore
-            key = newKey
-            improved = True
-            break
-    if not improved:
-        if score > bestScore:
-            bestScore = score
-            topKey = key
-            print("Key: %s" % key)
-            print("Decrypted Message: %s" % splitWords(key.decrypt(msg)))
-            print("Message score: %.3f" % score)
-            print("-" * 50)
-        key = Key(generateKey())
-        score = float("-inf")
-
+hillClimb()
