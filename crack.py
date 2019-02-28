@@ -1,6 +1,7 @@
 from math import log10
 from key import Key, alphabet
-from random import choices
+from random import choices, shuffle
+from analysis import findVowels
 import json
 
 #Read the message to be decrypted
@@ -19,6 +20,19 @@ for line in file:
 file.close()
 
 
+def randomVowelMap(msg): 
+    ##   Function that returns a partially generated key that assumes certain letters
+    ## are vowels
+    key = {}
+    vowels = ['a', 'e', 'i', 'o', 'u', 't']
+    likelyVowels = findVowels(msg)[0:6] #Get the mapped letters that are likely to be vowels
+    shuffle(vowels)
+    shuffle(likelyVowels)
+    for x in range(0, len(likelyVowels)):
+        key[vowels[x]] = likelyVowels[x] #create a partial key using the vowels and their likely mappings
+    return key
+
+
 def shiftCaesar(message, shift):
     ## Takes a message and shifts it as if it was put through a Caesar cipher
     ## Use a positive shift for encryption, negative shift for decryption
@@ -32,7 +46,8 @@ def shiftCaesar(message, shift):
         newMsg += alphabet[(index + shift) % 26] #Replace the letter with a shifted one
     return newMsg
 
-def splitWords(message): #Attempts to split up a phrase by english words
+def splitWords(message): 
+    #Attempts to split up a phrase by english words
     for x in range(len(message), 0, -1): #Work backwards to find solutions with larger words first
         if message[0:x] in wordList: #Go through message until a working word is found
             result = message[0:x] + " " + splitWords(message[x:]) #recursively find results until one works
@@ -65,24 +80,10 @@ class LangScore():
                 score += self.floor
         return score
 
-#Load the english NGRAMS for scoring
+#Load the english quadgrams for scoring
 # scorer = LangScore("quadcount.txt")
-scorer = LangScore("quadcountCOPIED.txt")
-
-# testKey1 = Key()
-# testKey2 = Key()
-
-# print(testKey1)
-# print(scorer.scoreText(testKey1.decrypt(msg)))
-# print(testKey2)
-# print(scorer.scoreText(testKey2.decrypt(msg)))
-# childKey = testKey1.mate(testKey2, scorer, msg)
-# print(childKey)
-# print(scorer.scoreText(childKey.decrypt(msg)))
-
-# print(scorer.scoreText("testingtheabilityofmyprogramtodecryptamessage"))
-
-# exit()
+# scorer = LangScore("quadcountCOPIED.txt")
+scorer = LangScore("quadcountEdited.txt")
 
 bestScore = scorer.scoreText(msg)
 bestMsg = msg
@@ -138,45 +139,79 @@ def hillClimb():
             score = float("-inf")
 
 def genetic():
+    ## This program uses a genetic algorithm to attempt to evolve keys
+    ## over time into a solution that best resembles english
+    ## It uses quadgrams to rate the relative fitness of a decryption result
+    ## in its 'englishness'. By doing so we have a metric we can use to
+    ## make incremental improvements on
     global bestScore
     POP_SIZE = 50
+    elites = []
 
     while True:
         population = []
         for x in range(POP_SIZE):
-            newKey = Key()
+            newKey = Key(randomVowelMap(msg))
+            # newKey = Key({'o' : 'j'})
+            # newKey = Key({'o' : 'j', 'a' : 's', 'i' : 'a'})
+            # newKey = Key({'o' : 'y', 'q' : 'e', 'e' : 'a'})
             newKey.calcScore(scorer, msg)
             population.append(newKey)
 
-        populationCount = 1
-        while populationCount <= 250:
+        populationCounter = 0
+        populationClock = 0
+        metBest = False
+        popBestScore = float("-inf")
+        print("Stuck on local max")
+        while populationClock < 50:
             population = sorted(population, reverse=True)
-            if population[0].score > bestScore:
-                print("Population #%i" % populationCount)
+            if population[0].score > bestScore: 
+            #if this is one of the best decryptions so far
+                # print("Population #%i" % populationClock)
                 bestScore = population[0].score
                 topKey = population[0]
+                #Print out all the information regarding this decryption
                 print("Key: %s" % population[0])
-                print("Decrypted Message: %s" % splitWords(population[0].decrypt(msg)))
+                print("Decrypted Message: %s" % population[0].decrypt(msg))
                 print("Message score: %.3f" % population[0].score)
                 print("-" * 50)
-                populationCount = 0
+                metBest = True
+                # elites.append(population[0])
+                # elites = elites[0:10]
+            #If we are improving, reset the clock
+            if population[0].score > popBestScore:
+                populationClock = 0
+                popBestScore = population[0].score
 
             weights = list(range(len(population), 0, -1))
             mates = choices(population, weights, k=POP_SIZE)
-            # for x in range(9):
-            #     newKey = Key()
-            #     newKey.calcScore(scorer, msg)
-            #     mates.append(newKey)
+            if populationClock > 30:
+                counter = 0
+                for x in elites:
+                    mates[counter] = x
+                    counter += 1
 
-            # print("Best one: ")
-            # print(population[0])
             newPopulation = []
             for x in mates:
                 child = population[0].mate(choices(population,weights, k=1)[0], scorer, msg) 
                 child.calcScore(scorer, msg)           
                 newPopulation.append(child)
+            # if populationClock > 30:
+            #     print("Adding variation")
+            #     # for x in range(10):
+            #     #     child = Key(randomVowelMap(msg))
+            #     #     child.calcScore(scorer, msg)
+            #     #     newPopulation[x] = child
+            #     for x in newPopulation:
+            #         x.mutate()
+            #         x.mutate()
+            #         x.mutate()
+            #         x.calcScore(scorer, msg)
             population = newPopulation
-            populationCount += 1
+            populationClock += 1
+        if metBest:
+            elites.append(population[0])
+            elites = elites[-10:]
 
 
 
