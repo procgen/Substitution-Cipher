@@ -1,10 +1,8 @@
 
-letterFreq = "etaoinshrdlcumwfgypbvkjxqz"
-doubleFreq = "lseotfprmcndgibazxuh"
-pairFreq = ["th", "er", "on", "an", "re", "he", "in", "ed", "nd", "ha", "at", "en", "es", "of", "or"]
-
-
 def findVowels(msg):
+    # Implementation of Sukhotin's algorithm
+    # Tries to classify characters as vowels and return a list of them
+    # Used to guess at where vowels are to get a head start at decrypting
     freqs = letterFreqAnalysis(msg)
     sdFreqs = sdAnalysis(msg)
 
@@ -39,6 +37,8 @@ def findVowels(msg):
 
 
 def letterFreqAnalysis(msg):
+    # Counts the number of times each letters occurs in the text
+    # and returns it in a dictionary
     freqMap = {}
     for x in msg:
         if not x.isalpha():
@@ -50,6 +50,8 @@ def letterFreqAnalysis(msg):
     return freqMap
 
 def sdAnalysis(msg):
+    # Counts the number of times two letters appear next to eachother
+    # in the text and returns the stats in a dictionary
     freqMap = {}
     for i in range(0, len(msg) - 1):
         if (msg[i], msg[i + 1]) in freqMap:
@@ -60,6 +62,8 @@ def sdAnalysis(msg):
 
 
 def doubleLetterAnalysis(msg):
+    # Not used but finds the number of times a letter appears twice
+    # next to itself and returns in a dictionary
     freqMap = {}
     for i in range(0, len(msg) - 1):
         if msg[i] == msg[i + 1]:
@@ -70,57 +74,8 @@ def doubleLetterAnalysis(msg):
                 freqMap[x] = 1
     return freqMap
 
-def pairAnalysis(msg):
-    freqMap = {}
-    for i in range(0, len(msg) - 1):
-        x = msg[i] + msg[i + 1]
-        if x in freqMap:
-            freqMap[x] = freqMap[x] + 1
-        else:
-            freqMap[x] = 1
-    return freqMap
 
 def printSorted(freqMap):
+    # Prints frequency data out for testing
     print(sorted(freqMap.items(), key=lambda x: x[1], reverse=True))
 
-
-# # file = open("./message.txt")
-# file = open("./english_words.txt")
-
-# msg = file.read()
-
-# for x in msg:
-#     if not x.isalpha():
-#         msg = msg.replace(x, "")
-
-# findVowels(msg)
-
-
-# print(msg)
-
-# freq = letterFreqAnalysis(msg)
-# freqDouble = doubleLetterAnalysis(msg)
-# freqPair = pairAnalysis(msg)
-
-# printSorted(freq)
-# printSorted(freqDouble)
-# printSorted(freqPair)
-
-# freqSorted = sorted(freq.items(), key=lambda x: x[1], reverse=True)
-
-# print(freqSorted)
-
-# keyFreq = {}
-
-# count = 0
-# for k, v in freqSorted:
-#     keyFreq[k] = letterFreq[count]
-#     count = count + 1
-
-# print(keyFreq)
-# print(msg)
-# newmsg = ""
-# for x in msg:
-#     newmsg += keyFreq[x]
-
-# print(newmsg)

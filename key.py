@@ -1,3 +1,12 @@
+# Author: Joshua Lorenzen
+# For CECS 378
+# Prof. Anthony Giacalone
+# 3/6/2019
+# This class represents a substitution cipher key 
+# It is capable of encrypting and decrypting phrases using that key
+# The class also provides functions for use within a genetic algorithm
+
+
 from random import shuffle, randint
 
 #Create a list to help remember the alphabet
@@ -43,6 +52,7 @@ class Key():
         return newMessage
 
     def __generateKey(self, key={}):
+        # This private message allows a key to have some values predetermined with the rest randomized
         inputs = list(set(alphabet) - set(key.keys())) #get all unassigned keys 
 
         values = list(set(alphabet) - set(key.values()))
@@ -53,6 +63,7 @@ class Key():
         return key
 
     def calcScore(self, scorer, msg):
+        # Set internal score for use in genetic algorithm
         self.score = scorer.scoreText(self.decrypt(msg))
 
     def encrypt(self, message):
@@ -72,39 +83,37 @@ class Key():
         return Key(newKey) #reutn the resulting mutated key
 
     def mate(self, partner, scorer, msg):
-        childKey = Key(self.forwardKey)
+        # Combines two keys together prefering values that increase the score, then mutates at the end
+        # Creates a key that is hopefully better than the two that created it with enough variation
+        # To ensure progress is made
+        childKey = Key(self.forwardKey) # start with a copy of this key
         partnerKey = partner.forwardKey
         keys = childKey.forwardKey.keys()
         for k in keys:
-            currentScore = scorer.scoreText(childKey.decrypt(msg))
-            if childKey.forwardKey[k] == partnerKey[k]:
+            currentScore = scorer.scoreText(childKey.decrypt(msg)) # See what our score currently is
+            if childKey.forwardKey[k] == partnerKey[k]: # if we are already the same just skip
                 continue
             else:
-                # print(k, childKey.forwardKey[k], k, partnerKey[k])
-
                 newLetter = partnerKey[k]
-                #Check out what mate is mapped to
+                # Check out what mate is mapped to
 
                 oldMap = childKey.backwardKey[newLetter]
-                #Find out what child key has as the key for that new letter
+                # Find out what child key has as the key for that new letter
 
                 tempMap = childKey.forwardKey.copy()
-                #create a temporary key mapping
+                # create a temporary key mapping
 
+                # perform the swap
                 tempMap[oldMap] = tempMap[k]
-
                 tempMap[k] = newLetter
                 tempKey = Key(tempMap)
                 newScore = scorer.scoreText(tempKey.decrypt(msg))
+                # Find our score with the swap
 
                 if newScore >= currentScore: #If we achieved a better score, keep the swap
                     childKey = tempKey
-        # childKey.mutate()
         childKey.mutate()
         return childKey
 
     def __str__(self):
         return str(self.forwardKey)
-
-    def __getitem__(self, key):
-        return self
